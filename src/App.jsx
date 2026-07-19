@@ -7,15 +7,8 @@ import { getTrendingMovies, updateSearchCount } from "./appwrite.js";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-
-const API_OPTIONS = {
-  method: "GET",
-  headers: {
-    accept: "application/json",
-    Authorization: `Bearer ${API_KEY}`,
-  },
-};
+// ✅ Use TMDB v3 key (safe for client)
+const API_KEY = import.meta.env.VITE_TMDB_V3_KEY;
 
 const App = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -37,10 +30,12 @@ const App = () => {
 
     try {
       const endpoint = query
-        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(
+            query
+          )}&api_key=${API_KEY}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
 
-      const response = await fetch(endpoint, API_OPTIONS);
+      const response = await fetch(endpoint);
 
       if (!response.ok) {
         throw new Error("Failed to fetch movies");
@@ -56,7 +51,7 @@ const App = () => {
 
       setMovieList(data.results || []);
 
-      if (query && data.results.length > 0) {
+      if (query && data.results && data.results.length > 0) {
         await updateSearchCount(query, data.results[0]);
       }
     } catch (error) {
@@ -70,7 +65,6 @@ const App = () => {
   const loadTrendingMovies = async () => {
     try {
       const movies = await getTrendingMovies();
-
       setTrendingMovies(movies);
     } catch (error) {
       console.error(`Error fetching trending movies: ${error}`);
